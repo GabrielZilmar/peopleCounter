@@ -1,9 +1,24 @@
 import numpy as np
 import cv2 as openCv
 
+# Function to return the rectangle's center
+def getCenter(x, y, w, h):
+    x1 = int(w / 2)
+    y1 = int(h / 2)
+    cx = x + x1
+    cy = y + y1
+    return cx, cy
+
+
 cap = openCv.VideoCapture("video.mp4")
 
 mog2 = openCv.createBackgroundSubtractorMOG2()
+
+posLine = 150
+offset = 30
+
+xy1 = (20, posLine)
+xy2 = (300, posLine)
 
 # Infinity loop for check all video
 quitVideo = False
@@ -21,13 +36,24 @@ while quitVideo is False:
     closing = openCv.morphologyEx(dilation, openCv.MORPH_CLOSE, kernel, iterations = 8) # Fill the noise inside an object
     contours, hierarchy = openCv.findContours(closing, openCv.RETR_TREE, openCv.CHAIN_APPROX_SIMPLE) # Contour the objects
 
+    openCv.line(frame, xy1, xy2, (255, 0, 0), 3) # Set a line in the original video
+    # Set offset's lines in the original video
+    openCv.line(frame, (xy1[0], posLine-offset), (xy2[0], posLine-offset), (255, 0, 255), 2) 
+    openCv.line(frame, (xy1[0], posLine+offset), (xy2[0], posLine+offset), (255, 0, 255), 2)
+
     # Walk in the contours
+    count = 0
     for cnt in contours:
         # Get contours area
         (x, y, w, h) = openCv.boundingRect(cnt)
-        area = openCv.contourArea(cnt)
+        area = openCv.contourArea(cnt) # Set the people's area
 
-        openCv.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2) # Set the people's contour in the original video
+        # Check if the area is considerably
+        if int(area) > 3000:
+            center = getCenter(x, y, w, h) # Set the people's center
+
+            openCv.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2) # Set the people's contour in the original video
+            openCv.circle(frame, center, 4, (0, 0, 255), -1) # Set the people's center in the original video
 
     openCv.imshow("frame", frame) # Show the frame picked
     openCv.imshow("closing", closing) # Show the frame picked
